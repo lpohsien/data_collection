@@ -23,12 +23,16 @@ class PiCam:
         self.timestamp_format = timestamp_format
         self.location_id = location_id
         self.timezone = timezone
-        self.picam2.start()
         self.image_format = self.picam2.stream_configuration("main")
+        self.picam2.start()
         time.sleep(1)
 
     def ev_bracketing_capture(self, min, max, num_frames):
-        interval = (max - min) / (num_frames - 1)
+        interval = None
+        if num_frames == 1:
+            interval = int((max - min) / 2)
+        else:
+            interval = int((max - min) / (num_frames - 1))
         metadatas = []
         for i in range(num_frames):
             

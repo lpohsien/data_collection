@@ -16,11 +16,30 @@ def signal_handler(sig, frame):
     print("\nCtrl-C detected! Stopping threads...")
     stop_event.set()  # Signal threads to stop
 
-def fast_sleep(seconds, resolution=0.5):
+def fast_sleep(seconds, resolution=2):
     for _ in range(int(seconds / resolution)):
         if stop_event.is_set():
             break
         time.sleep(resolution)
+
+def time_dependent_settings(timezone):
+    image_interval = 30 * 60 # 30 minutes
+    ev_bracket = (-2, 2, 5)
+    
+    # Get current time
+    current_time = datetime.now(timezone)
+    current_hour = current_time.hour
+
+    if current_hour >= 23 or current_hour < 4:
+        image_interval = 60 * 60
+        ev_bracket = (0, 0, 1)
+
+    if (current_hour >= 5 and current_hour < 7) or (current_hour >= 17 and current_hour < 19):
+        image_interval = 10 * 60
+
+    return image_interval, ev_bracket      
+
+   
 
 def main():
     timezone = ZoneInfo("Asia/Singapore")
@@ -37,7 +56,12 @@ def main():
 
     try:
         while not stop_event.is_set():
-            fast_sleep(60 * 30)
+
+            # Time-dependent settings
+            image_interval, ev_bracket = time_dependent_settings(timezone)   
+            print(f"Using settings: {image_interval} seconds, {ev_bracket} EV bracketing")
+
+            fast_sleep(image_interval)
         
             # Get most recent sensor data
             mqtt_sub.retreive(data_entry.data)
@@ -45,7 +69,7 @@ def main():
             logger.debug(str(data_entry))
 
             # Capture image
-            metadatas = camera.ev_bracketing_capture(-2, 2, 5)
+            metadatas = camera.ev_bracketing_capture(*ev_bracket)
             for metadata in metadatas:
                 
                 image_timestamp = datetime.strptime(metadata["captureTimestamp"], camera.timestamp_format)
