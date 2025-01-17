@@ -22,7 +22,7 @@ class MQTTSubscriber:
                  sensor_topic = 'sensor/#', 
                  username = 'cloud', 
                  password = '3', 
-                 image_dir = '/mnt/USBDRIVE/cp4101_data',
+                 image_dir = '/mnt/USBDRIVE/cp4101_data/images',
                  timestamp_format = "%Y%m%d%H%M%S",
                  timezone = ZoneInfo("Asia/Singapore"),
                  log_level = "INFO",

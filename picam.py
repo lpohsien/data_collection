@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 class PiCam:
     def __init__(self, 
-                 image_dir="/mnt/USBDRIVE/cp4101_data",
+                 image_dir="/mnt/USBDRIVE/cp4101_data/images",
                  location_id = "00",
                  timestamp_format = "%Y%m%d%H%M%S",
                  timezone = ZoneInfo("Asia/Singapore"),

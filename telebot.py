@@ -10,7 +10,7 @@ class TeleBot:
 
     def __init__(self, 
                  token_file=os.path.join(os.path.dirname(__file__), "secrets.txt"),
-                 image_dir="/mnt/USBDRIVE/cp4101_data"):
+                 image_dir="/mnt/USBDRIVE/cp4101_data/images"):
         self.token_file = token_file
         self.token = None
         self.url = None
