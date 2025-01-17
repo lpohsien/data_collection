@@ -3,7 +3,7 @@ import os
 import time
 import requests
 import json
-
+from data_utils import getLastRowReadable
 
 
 class TeleBot:
@@ -108,14 +108,7 @@ class TeleBot:
         return latest_photo[-1]
     
     def getLatestData(self):
-        with open(os.path.join(self.image_dir, "data.csv"), "rb") as f:
-            try:  # catch OSError in case of a one line file 
-                f.seek(-2, os.SEEK_END)
-                while f.read(1) != b'\n':
-                    f.seek(-2, os.SEEK_CUR)
-            except OSError:
-                f.seek(0)
-            return f.readline().decode()
+        return getLastRowReadable(os.path.join(self.image_dir, "data.csv"))
 
     def getCount(self):
         return len(glob.glob(os.path.join(self.image_dir, "*.jpg")))
@@ -141,7 +134,7 @@ while True:
     elif text == "/data":
         data = bot.getLatestData()
         print(f"Sending data to {chat_id}")
-        res = bot.sendMessage(chat_id, f"Latest data: {data}")
+        res = bot.sendMessage(chat_id, f"Latest data:\n{data}")
     elif text == "/count":
         count = bot.getCount()
         print(f"Sending count to {chat_id}")
