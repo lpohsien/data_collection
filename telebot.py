@@ -10,12 +10,13 @@ class TeleBot:
 
     def __init__(self, 
                  token_file=os.path.join(os.path.dirname(__file__), "secrets.txt"),
-                 image_dir="/mnt/USBDRIVE/cp4101_data/images"):
+                 data_dir="../cp4101_data"):
         self.token_file = token_file
         self.token = None
         self.url = None
         self.offset = 0
-        self.image_dir = image_dir
+        self.data_dir = data_dir
+        self.image_dir = os.path.join(data_dir, "images")
 
     def getAPIToken(self):
         with open(self.token_file, "r") as f:
@@ -108,7 +109,7 @@ class TeleBot:
         return latest_photo[-1]
     
     def getLatestData(self):
-        return getLastRowReadable(os.path.join(self.image_dir, "data.csv"))
+        return getLastRowReadable(os.path.join(self.data_dir, "data.csv"))
 
     def getCount(self):
         return len(glob.glob(os.path.join(self.image_dir, "*.jpg")))
