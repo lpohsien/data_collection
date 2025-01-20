@@ -1,3 +1,20 @@
+
+# For mqtt_sub.py (ESP32 & ESP32CAM)
 paho-mqtt
+numpy 
+pillow
+
+# For nicla_sense.py (NICLASense ME)
 bleak
-telepot
+
+# For PiCamera
+picamera2
+
+# For apds9960_reader
+apds9960 
+smbus2
+
+# For logging
+tzlocal
+pytz
+

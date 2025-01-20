@@ -1,4 +1,5 @@
 from datetime import datetime
+from apds9960_reader import APDS9960Reader
 from mqtt_sub import MQTTSubscriber
 from nicla_sense import BLEClient
 from dataset import DataEntry
@@ -7,7 +8,7 @@ import threading
 import signal
 from logger import Logger
 import time
-from zoneinfo import ZoneInfo
+from tzlocal import get_localzone
 
 stop_event = threading.Event()
 logger = Logger("Main", "DEBUG").get()
@@ -42,11 +43,14 @@ def time_dependent_settings(timezone):
    
 
 def main():
-    timezone = ZoneInfo("Asia/Singapore")
+    # timezone = ZoneInfo("Asia/Singapore")
+    timezone = get_localzone()
+    logger.info("Starting data collection server at " + str(datetime.now(timezone)))
     data_entry = DataEntry(log_level="DEBUG")
     mqtt_sub = MQTTSubscriber(log_level="INFO", stop_event=stop_event, timezone=timezone)
     nicla_sense = BLEClient(log_level="INFO", stop_event=stop_event, timezone=timezone)
     camera = PiCam(log_level="INFO", timezone=timezone)
+    apds9960 = APDS9960Reader()
     mqtt_thread = threading.Thread(target=mqtt_sub.run, daemon=True)
     nicla_thread = threading.Thread(target=nicla_sense.run, daemon=True)
     mqtt_thread.start()
@@ -59,15 +63,17 @@ def main():
 
             # Time-dependent settings
             image_interval, ev_bracket = time_dependent_settings(timezone)   
-            print(f"Using settings: {image_interval} seconds, {ev_bracket} EV bracketing")
+            logger.info(f"Using settings: {image_interval} seconds, {ev_bracket} EV bracketing")
 
             fast_sleep(image_interval)
         
-            # Get most recent sensor data
+            # Get most recent sensor data, tolerate delay up to 600 seconds
             mqtt_sub.retreive(data_entry.data)
             nicla_sense.retreive(data_entry.data)
             logger.debug(str(data_entry))
 
+            # Retrieve APDS9960 data, assumed to have negligible delay
+            apds9960.retrieve(data_entry.data)
             # Capture image
             metadatas = camera.ev_bracketing_capture(*ev_bracket)
             for metadata in metadatas:

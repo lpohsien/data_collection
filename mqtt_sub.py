@@ -25,6 +25,7 @@ class MQTTSubscriber:
                  image_dir = '/mnt/USBDRIVE/cp4101_data/images',
                  timestamp_format = "%Y%m%d%H%M%S",
                  timezone = ZoneInfo("Asia/Singapore"),
+                 delay_tolerance = 600,
                  log_level = "INFO",
                  stop_event = None):
         self.timestamp_format = timestamp_format
@@ -50,6 +51,7 @@ class MQTTSubscriber:
         }
         self.logger = Logger("MQTTSubscriber", log_level).get()
         self.stop_event = stop_event
+        self.delay_tolerance = delay_tolerance
         self.lock = threading.Lock()
 
 
@@ -129,8 +131,8 @@ class MQTTSubscriber:
         dt = (curr_buffer_time - main_buffer_time).seconds
         dt *= 1 if curr_buffer_time > main_buffer_time else -1
         self.logger.debug(f"Time between main buffer and current buffer: {dt}s")
-        if dt > 600:
-            self.logger.warning(f"Data in main buffer outdated by >{600}s!")
+        if dt > self.delay_tolerance:
+            self.logger.warning(f"Data in main buffer outdated by >{self.delay_tolerance}s!")
             for key in buffer:
                 if key != "timestamp":
                     buffer[key] = None

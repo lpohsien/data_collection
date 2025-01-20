@@ -13,8 +13,20 @@ class BLEClient:
                  dev_name = "NiclaSenseME-B806",
                  timestamp_format = "%Y%m%d%H%M%S",
                  timezone = ZoneInfo("Asia/Singapore"),
+                 delay_tolerance = 600,
                  log_level = "INFO",
                  stop_event = None):
+        '''
+            Wrapper class for BLE communication with NiclaSenseME
+            polling_interval: Interval between each polling in seconds
+            dev_name: Name of the BLE device
+            timestamp_format: Format of the timestamp
+            timezone: Timezone for formatting timestamp
+            delay_tolerance: Tolerance for time since last readings of other sensors (seconds), 
+                if delay exceeds this value, previous sensor readings by other sensors will be discarded
+            log_level: Logging level
+            stop_event: Synchronization signal for stopping the BLEClient
+        '''
         self.polling_interval = polling_interval
         self.timestamp_format = timestamp_format
         self.timezone = timezone
@@ -45,6 +57,7 @@ class BLEClient:
         self.device = None
         self.logger = Logger("BLEClient", log_level).get()
         self.stop_event = stop_event
+        self.delay_tolerance = delay_tolerance
         self.lock = threading.Lock()
 
     @staticmethod
@@ -69,8 +82,8 @@ class BLEClient:
         self.logger.debug(f"Time between main buffer and current buffer: {dt}s")
 
         if dt >= 0:
-            if dt > 600:
-                self.logger.warning("Data in main buffer outdated!")
+            if dt > self.delay_tolerance:
+                self.logger.warning(f"Data in main buffer outdated by >{self.delay_tolerance}s!")
                 for key in buffer:
                     if key != "timestamp":
                         buffer[key] = None
