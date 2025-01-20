@@ -12,6 +12,8 @@ import numpy as np
 from logger import Logger
 import time
 
+DIR_PATH = os.path.dirname(os.path.abspath(__file__))
+
 class MQTTSubscriber:
     def __init__(self, 
                  mqtt_broker_ip = '192.168.0.117', 
@@ -22,7 +24,7 @@ class MQTTSubscriber:
                  sensor_topic = 'sensor/#', 
                  username = 'cloud', 
                  password = '3', 
-                 image_dir = '/mnt/USBDRIVE/cp4101_data/images',
+                 image_dir = os.path.join(DIR_PATH, 'data', 'images'),
                  timestamp_format = "%Y%m%d%H%M%S",
                  timezone = ZoneInfo("Asia/Singapore"),
                  delay_tolerance = 600,

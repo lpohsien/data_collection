@@ -5,9 +5,11 @@ from logger import Logger
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+DIR_PATH = os.path.dirname(os.path.abspath(__file__))
+
 class PiCam:
     def __init__(self, 
-                 image_dir="/mnt/USBDRIVE/cp4101_data/images",
+                 image_dir = os.path.join(DIR_PATH, 'data', 'images'),
                  location_id = "00",
                  timestamp_format = "%Y%m%d%H%M%S",
                  timezone = ZoneInfo("Asia/Singapore"),

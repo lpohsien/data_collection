@@ -9,6 +9,9 @@ import signal
 from logger import Logger
 import time
 from tzlocal import get_localzone
+from os.path import dirname, abspath, join
+
+DATA_DIR_PATH = join(dirname(abspath(__file__)), 'data')
 
 stop_event = threading.Event()
 logger = Logger("Main", "DEBUG").get()
@@ -46,10 +49,10 @@ def main():
     # timezone = ZoneInfo("Asia/Singapore")
     timezone = get_localzone()
     logger.info("Starting data collection server at " + str(datetime.now(timezone)))
-    data_entry = DataEntry(log_level="DEBUG")
-    mqtt_sub = MQTTSubscriber(log_level="INFO", stop_event=stop_event, timezone=timezone)
+    data_entry = DataEntry(log_level="DEBUG", data_file=join(DATA_DIR_PATH, 'data.csv'))
+    mqtt_sub = MQTTSubscriber(log_level="INFO", stop_event=stop_event, timezone=timezone, image_dir=join(DATA_DIR_PATH, 'images'))
     nicla_sense = BLEClient(log_level="INFO", stop_event=stop_event, timezone=timezone)
-    camera = PiCam(log_level="INFO", timezone=timezone)
+    camera = PiCam(log_level="INFO", timezone=timezone, image_dir=join(DATA_DIR_PATH, 'images'))
     apds9960 = APDS9960Reader()
     mqtt_thread = threading.Thread(target=mqtt_sub.run, daemon=True)
     nicla_thread = threading.Thread(target=nicla_sense.run, daemon=True)

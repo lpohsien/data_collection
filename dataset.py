@@ -1,9 +1,13 @@
 import csv
 from logger import Logger
+from os.path import join, dirname, abspath
+
+DIR_PATH = dirname(abspath(__file__))
+
 class DataEntry:
     def __init__(self, 
                  timestamp_format = "%Y%m%d%H%M%S",
-                 data_file = "/mnt/USBDRIVE/cp4101_data/data.csv",
+                 data_file = join(DIR_PATH, 'data', 'data.csv'),
                  log_level = "INFO",
                  ):
         self.data = {

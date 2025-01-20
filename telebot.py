@@ -5,12 +5,13 @@ import requests
 import json
 from data_utils import getLastRowReadable
 
+DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 class TeleBot:
 
     def __init__(self, 
-                 token_file=os.path.join(os.path.dirname(__file__), "secrets.txt"),
-                 data_dir="../cp4101_data"):
+                 token_file=os.path.join(DIR_PATH, "secrets.txt"),
+                 data_dir=os.path.join(DIR_PATH, 'data')):
         self.token_file = token_file
         self.token = None
         self.url = None

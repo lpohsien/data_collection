@@ -16,7 +16,7 @@ The [launch script](launch_data_collection.sh) will launch the following process
 
 Note that the telegram bot expect the following directory structure:
 ```
-cp4101_data
+data
 |- data.csv
 |- images
     |- image1.jpg

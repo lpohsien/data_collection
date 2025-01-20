@@ -2,11 +2,12 @@ import csv
 from datetime import datetime
 import argparse
 from collections import deque
+import os
 
-# CSV_FILE = '../data.csv'
-CSV_FILE = '../cp4101_data/data.csv'
-TEXT_FILE = '../cp4101_data/plaintext_data.txt'
-TRAIN_FILE = '../cp4101_data/train.csv'
+ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+CSV_FILE = os.path.join(ROOT_DIR, 'data.csv')
+TEXT_FILE = os.path.join(ROOT_DIR, 'plaintext_data.csv')
+TRAIN_FILE = os.path.join(ROOT_DIR, 'train.csv')
 COLUMNS_OF_INTEREST = ['amb', 'r', 'g', 'b', 'temp', 'pressure', 'co2', 'humidity', 'gas', 'Lux']
 PROPER_NAMES = {
     'amb': 'Ambient Light',
@@ -33,6 +34,8 @@ def readableTimestamp(timestamp):
     ''' 
     Convert the timestamp to a human-readable format
     '''
+    if timestamp.endswith('_base'):
+        timestamp = timestamp[:-5]
     timestamp = datetime.strptime(timestamp,"%Y%m%d%H%M%S")
     return timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -124,5 +127,5 @@ def getLastRowReadable(file):
         filtered.reverse()
         return ''.join(filtered)[:-1]
 
-convertToPlaintext()
-extracImageGroup(num=1)
+# convertToPlaintext()
+# extracImageGroup(num=1)
