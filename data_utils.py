@@ -64,7 +64,7 @@ def convertToPlaintext(csv_path=CSV_FILE, text_path=TEXT_FILE, neutral_only=True
 
                 text_file.write(f"{curr_image_grp}>{row['image']}>{','.join(filtered)[:-1]}\n")
 
-def extracImageGroup(input_path=TEXT_FILE, output_path=TRAIN_FILE, num=1):
+def extracImageGroup(input_path=TEXT_FILE, output_path=TRAIN_FILE, num=10):
     ''' 
     Extract the group of image taken from the same scene and perspective. The first image of the group is the on
     suffixed with "_base" for its timestamp entry, while the last image is the one right before the next group. 
@@ -73,7 +73,7 @@ def extracImageGroup(input_path=TEXT_FILE, output_path=TRAIN_FILE, num=1):
     num: number of image groups to extract counting from the back
     '''
     print('Extracting image groups...')
-    buffer = deque(iterable=[], maxlen=num) # Circular buffer
+    buffer = deque(iterable=[], maxlen=num) if num >= 0 else deque([]) # Circular buffer
     num_total = 0
     num_extracted = 0
     num_groups = 0
@@ -90,11 +90,13 @@ def extracImageGroup(input_path=TEXT_FILE, output_path=TRAIN_FILE, num=1):
             if group != curr_grp:
                 num_groups += 1
                 curr_grp = group
-                buffer.append([]) # Create anew image group
+                if num != 0:
+                    buffer.append([]) # Create anew image group
 
             # Process the data
             _, image, caption = line.strip().split('>')
-            buffer[-1].append((image, caption)) # Append to the latest image group
+            if num != 0:
+                buffer[-1].append((image, caption)) # Append to the latest image group
 
 
 
@@ -127,5 +129,5 @@ def getLastRowReadable(file):
         filtered.reverse()
         return ''.join(filtered)[:-1]
 
-# convertToPlaintext()
-# extracImageGroup(num=1)
+convertToPlaintext()
+extracImageGroup(num=-1)
