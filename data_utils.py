@@ -3,20 +3,22 @@ from datetime import datetime
 import argparse
 from collections import deque
 import os
+import random
+import re
 
 ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 CSV_FILE = os.path.join(ROOT_DIR, 'data.csv')
 TEXT_FILE = os.path.join(ROOT_DIR, 'plaintext_data.csv')
-TRAIN_FILE = os.path.join(ROOT_DIR, 'train.csv')
+TRAIN_DIR = ROOT_DIR
 COLUMNS_OF_INTEREST = ['amb', 'r', 'g', 'b', 'temp', 'pressure', 'co2', 'humidity', 'gas', 'Lux']
 PROPER_NAMES = {
-    'amb': 'Ambient Light',
-    'r': 'Ambient red channel',
-    'g': 'Ambient green channel',
-    'b': 'Ambient blue channel',
-    'temp': 'Temperature',
+    'amb': 'Clear',
+    'r': 'Red',
+    'g': 'Green',
+    'b': 'Blue',
+    'temp': 'Temp',
     'pressure': 'Pressure',
-    'co2': 'CO2 Level',
+    'co2': 'CO2',
     'humidity': 'Humidity',
     'gas': 'Gas',
     'Lux': 'Lux'
@@ -64,7 +66,57 @@ def convertToPlaintext(csv_path=CSV_FILE, text_path=TEXT_FILE, neutral_only=True
 
                 text_file.write(f"{curr_image_grp}>{row['image']}>{','.join(filtered)[:-1]}\n")
 
-def extracImageGroup(input_path=TEXT_FILE, output_path=TRAIN_FILE, num=10):
+def convertToPlaintextWithAugmentation(csv_path=CSV_FILE, 
+                                       text_path=TEXT_FILE, 
+                                       neutral_only=True, 
+                                       night_prob=0.9,
+                                       incomplete_prob=0.1, 
+                                       num_permutations=10):
+    ''' 
+    Create plaintext representation of the data row-wise by selecting columns of interest 
+    and putting in a key-value pair format. If neutral_only is set to True, only rows with
+    ev = 0.0 will be included in the plaintext file
+    '''
+    total_count = 0
+    night_count = 0
+    incomplete_count = 0
+    with open(csv_path, 'r', encoding='utf-8') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        curr_image_grp = 0
+        with open(text_path, 'w', encoding='utf-8') as text_file:
+            for row in csv_reader:
+
+                if "base" in row['timestamp']:
+                    curr_image_grp += 1
+
+                if row['ev'] == None: 
+                    print(row['image'])
+                    assert False
+
+                if neutral_only and float(row['ev']) != 0.0: continue # Skip rows with no data
+
+                filtered = [f'{PROPER_NAMES[x]}:{roundData(row[x], 2)}' for x in COLUMNS_OF_INTEREST if row[x] != '']
+
+                # Choose num_permutations many random permutations of the data
+                permutations = [filtered] + [random.sample(filtered, len(filtered)) for _ in range(num_permutations-1)]
+
+                for perm in permutations:
+                    if float(row['Lux']) < 100:
+                        # choose a night image only `night_prob` of the time
+                        if random.random() > night_prob: continue
+                        night_count += 1
+
+                    if len(filtered) < len(COLUMNS_OF_INTEREST):
+                        # drop an incomplete data entry only `incomplete_prob` of the time
+                        if random.random() > incomplete_prob: continue
+                        incomplete_count += 1
+
+                    text_file.write(f"{curr_image_grp}>{row['image']}>{','.join(perm)}\n")
+                    total_count += 1
+    print(f'Percentage of incomplete entries: {incomplete_count/total_count}')
+    print(f'Percentage of night images: {night_count/total_count}')
+
+def extracImageGroup(input_path=TEXT_FILE, output_path=TRAIN_DIR, num=10, mode='base'):
     ''' 
     Extract the group of image taken from the same scene and perspective. The first image of the group is the on
     suffixed with "_base" for its timestamp entry, while the last image is the one right before the next group. 
@@ -103,17 +155,18 @@ def extracImageGroup(input_path=TEXT_FILE, output_path=TRAIN_FILE, num=10):
     # Write the extracted image groups to the train file
     for i, group in enumerate(buffer):
         grp_count = 0
-        group_output_path = output_path.replace('.csv', f'{i}.csv')
+        group_output_path = os.path.join(output_path, f'{mode}{i}.csv')        
         with open(group_output_path, 'w', encoding='utf-8') as output_file:
             for image, caption in group:
                 output_file.write(f'{image}>{caption}\n')
                 num_extracted += 1
+                grp_count += 1
         print(f'{grp_count} entries extracted to {group_output_path}')
+        grp_count = 0
 
     print(f'Number of image groups extracted: {len(buffer)}/{num_groups}')
     print(f'Number of images extracted: {num_extracted}/{num_total}')
     print('Percentage of images extracted:', num_extracted / num_total * 100)
-
 
 
 def getLastRowReadable(file):
@@ -129,5 +182,35 @@ def getLastRowReadable(file):
         filtered.reverse()
         return ''.join(filtered)[:-1]
 
-convertToPlaintext()
-extracImageGroup(num=-1)
+def create_train_test_split(input_path = TRAIN_DIR, ratio=0.2, mode='base'):
+    train_file_path = os.path.join(input_path, 'train.csv')
+    test_file_path = os.path.join(input_path, 'val.csv')
+    train_file = open(train_file_path, 'w', encoding='utf-8')
+    test_file = open(test_file_path, 'w', encoding='utf-8')
+
+    regex = re.compile(rf"{mode}[0-9]?+\.csv$")
+    for file in os.listdir(input_path):
+        if regex.search(file):
+
+            with open(os.path.join(input_path, file), 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                random.shuffle(lines)
+                train_file.writelines(lines[:int(len(lines)*(1-ratio))])
+                test_file.writelines(lines[int(len(lines)*(1-ratio)):])
+
+    train_file.close()
+    test_file.close()
+
+    num_line_train = sum(1 for line in open(train_file_path, 'rb'))
+    num_line_test = sum(1 for line in open(test_file_path, 'rb'))
+    print(f'Number of lines in train file: {num_line_train}')
+    print(f'Number of lines in test file: {num_line_test}')
+    print(f'Total number of lines: {num_line_train + num_line_test}')
+    print(f'Final train ratio: {num_line_train / (num_line_train+num_line_test)}')
+
+
+mode = 'base'
+convertToPlaintextWithAugmentation(night_prob=0.5, num_permutations=10)
+extracImageGroup(num=1000, mode=mode)
+create_train_test_split(mode='base7')
+
