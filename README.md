@@ -23,3 +23,13 @@ data
     |- image2.jpg
     |- ...
 ```
+
+# Data processing
+
+Note that since we might want to differentiate images taken from a different angle, the first timestamp for that camera angle in the `data.csv` can be appended with the `_base` suffix for later preprocessing to differentiate them into different image groups.
+
+The main data post-processing code is specified in [data_utils.py](/data_utils.py). The `convertToPlaintextWithAugmentation` function converts the csv data in `data.csv` to plaintext image-sensor pairs, along with its image and write it to the file as specified by `TEXT_PATH`. Specific image groups can be extracted from the plaintext dile using the `extracImageGroup` function. Each group of image-sensor data corresponding to different camera angle will be saved to its respective csv file (note that in this file, the image and sensor data are `>` separated instead of comma separated).
+
+The `create_train_test_split` function is originally designed to create splits from all the chosen image groups. However, to prevent leakage of information, it might be more sensible to split by image groups (i.e. choosing specific image group as the validation set instead of mixing all the groups and sampling from the mix). With such an approach, the only use of the  `create_train_test_split` function is to help collate the entries from different image groups and convert them back into csv format (the train test split ratio should be set to 0 or 1, with the splits being created manually by running the functions on two different set of image groups). 
+
+To integrate better with the image embedding precomputation and training as specified in [sensor encoder training](https://github.com/lpohsien/CLIP/), the `data` directory should be symlinked to the `collected_data` directory in that repository.
